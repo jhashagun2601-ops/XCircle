@@ -1,0 +1,6 @@
+{
+  "name": "XCircle - Community & Reconnection Platform",
+  "description": "Reconnect with school classmates, college friends, alumni, and former colleagues through verified circles, memories, and radar discovery.",
+  "requestFramePermissions": ["camera"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

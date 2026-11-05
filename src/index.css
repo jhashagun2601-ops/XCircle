@@ -1,0 +1,101 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --font-display: 'Manrope', 'Inter', sans-serif;
+
+    /* Theme Palette */
+    --color-deep-navy: #101827;
+    --color-dark-navy: #142238;
+    --color-charcoal: #1B1E24;
+    --color-graphite: #242831;
+    --color-steel-blue: #344B6B;
+    --color-white: #F5F6F8;
+    --color-soft-grey: #A7AFBC;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    background-color: #101827;
+    color: #F5F6F8;
+  }
+
+  h1, h2, h3, h4, .font-display {
+    font-family: var(--font-display);
+    letter-spacing: -0.015em;
+  }
+}
+
+/* Subtle dark grid background */
+.bg-nostalgia-grid {
+  background-color: #101827;
+  background-image: radial-gradient(#242831 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+/* Sleek, professional dark cards with subtle graphite borders and gentle depth */
+.card-pop,
+.card-pop-sm,
+.card-pop-lg,
+.card-dark {
+  background-color: #142238;
+  border: 1px solid #242831;
+  border-radius: 0.75rem;
+  box-shadow: 0 4px 16px -2px rgba(0, 0, 0, 0.4);
+}
+
+.card-pop-sm {
+  border-radius: 0.5rem;
+}
+
+.card-pop-lg {
+  border-radius: 1rem;
+}
+
+/* Restrained, elegant button styling */
+.btn-pop {
+  border: 1px solid #344B6B;
+  background-color: #344B6B;
+  color: #F5F6F8;
+  border-radius: 0.5rem;
+  transition: all 0.15s ease-in-out;
+  box-shadow: 0 2px 8px -1px rgba(0, 0, 0, 0.3);
+}
+
+.btn-pop:hover {
+  background-color: #3d587c;
+  border-color: #4c6a94;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.4);
+}
+
+.btn-pop:active {
+  transform: translateY(0);
+}
+
+/* Premium dark chat wallpapers */
+.chat-wallpaper-stars,
+.chat-wallpaper-stamps1,
+.chat-wallpaper-stamps2,
+.chat-wallpaper-ivory {
+  background-color: #101827;
+  background-image: radial-gradient(#242831 1.2px, transparent 1.2px);
+  background-size: 24px 24px;
+}
+
+/* Custom scrollbars for dark theme */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #242831;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #344B6B;
+}
