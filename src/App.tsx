@@ -13,6 +13,7 @@ import { SignInScreen } from './components/auth/SignInScreen';
 import { SignUpScreen } from './components/auth/SignUpScreen';
 import { ForgotPasswordScreen } from './components/auth/ForgotPasswordScreen';
 import { AuthCallbackScreen } from './components/auth/AuthCallbackScreen';
+import { CompleteProfileScreen } from './components/auth/CompleteProfileScreen';
 
 import { HomeScreen } from './components/screens/HomeScreen';
 import { ExploreScreen } from './components/screens/ExploreScreen';
@@ -27,7 +28,7 @@ import { Logo } from './components/common/Logo';
 
 const AppContent: React.FC = () => {
   const { currentScreen, toastMessage } = useApp();
-  const { user, loading } = useAuth();
+  const { user, profile, loading } = useAuth();
 
   // Browser Pathname State
   const [currentRoute, setCurrentRoute] = useState<string>(() => {
@@ -102,7 +103,12 @@ const AppContent: React.FC = () => {
     return <SignInScreen onNavigate={navigate} />;
   }
 
-  // 4. Authenticated Application
+  // 4. Registration Completion Guard (For Google OAuth & Magic Link users)
+  if (currentRoute === '/complete-profile' || (profile && profile.isProfileCompleted === false)) {
+    return <CompleteProfileScreen onNavigate={navigate} />;
+  }
+
+  // 5. Authenticated Application
   const renderScreen = () => {
     switch (currentScreen) {
       case 'home':

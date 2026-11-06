@@ -99,7 +99,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const [circles, setCircles] = useState<Circle[]>(() => {
     const saved = localStorage.getItem('xcircle_circles');
-    return saved ? JSON.parse(saved) : INITIAL_CIRCLES;
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length >= 10 && parsed.every((c: any) => c.category)) {
+          return parsed;
+        }
+      } catch (e) {
+        // ignore
+      }
+    }
+    return INITIAL_CIRCLES;
   });
 
   const [activeCircleId, setActiveCircleId] = useState<string>('circle_dps_2019');
@@ -218,6 +228,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       batch: circleData.batch || 'Class of 2024',
       membersCount: 1,
       type: circleData.type || 'school',
+      category: circleData.category || 'academic',
+      companyName: circleData.companyName,
+      locality: circleData.locality,
       verificationStatus: 'peer_confirmed',
       description: circleData.description || 'A gathering place for shared memories.',
       coverImage: circleData.coverImage || '/src/assets/images/xcircle_community_campus_1793604164603.jpg',

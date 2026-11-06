@@ -23,6 +23,25 @@ export interface TimelineEntry {
   peerEndorsementsCount?: number;
 }
 
+export type CircleMajorCategory = 'academic' | 'employer' | 'apartment_local';
+
+export interface CountryOption {
+  code: string;
+  name: string;
+  dialCode: string;
+  flag: string;
+}
+
+export interface SsoOrganization {
+  id: string;
+  name: string;
+  domain: string;
+  protocol: 'saml' | 'oidc';
+  logo?: string;
+  ssoConfigured: boolean;
+  notes?: string;
+}
+
 export interface UserProfile {
   id: string;
   name: string;
@@ -42,6 +61,17 @@ export interface UserProfile {
   privacySetting?: 'public' | 'circles_only' | 'connections_only';
   isConnected?: boolean;
   requestSent?: boolean;
+  
+  // Registration & Phone Verification fields
+  phoneNumber?: string;
+  phoneCountryCode?: string;
+  phoneVerified?: boolean;
+  academicYear?: string;
+  joiningYear?: string;
+  employer?: string;
+  apartmentCommunity?: string;
+  isProfileCompleted?: boolean;
+  authProvider?: 'google' | 'magic_link' | 'sso' | 'password';
 }
 
 export interface CircleMember {
@@ -134,7 +164,8 @@ export interface Circle {
   batch: string;
   membersCount: number;
   type: 'school' | 'college' | 'university' | 'company' | 'alumni' | 'fellowship';
-  categoryTag?: string; // e.g. "Schools", "Colleges", "Alumni", "Workplaces", "Batches"
+  category: CircleMajorCategory; // Major category: 'academic' | 'employer' | 'apartment_local'
+  categoryTag?: string; // e.g. "Schools", "Colleges", "Alumni", "Workplaces", "Batches", "Apartments"
   verificationStatus: VerificationBadgeType;
   description: string;
   coverImage?: string;
@@ -150,6 +181,20 @@ export interface Circle {
     date: string;
     content: string;
   }[];
+
+  // Employer Circle Specifics
+  companyName?: string;
+  companyInfo?: string;
+  employeeCommunity?: string;
+  departmentOrCohort?: string;
+  workplaceDomain?: string;
+
+  // Apartment & Local Circle Specifics (Privacy-First)
+  locality?: string;
+  city?: string;
+  societyName?: string;
+  communityRules?: string[];
+  privacyNotice?: string;
 }
 
 export interface CircleJoinRequest {

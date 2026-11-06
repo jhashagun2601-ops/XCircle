@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
 import { useAuth } from '../../context/AuthContext';
 import { TimelineEntry, VerificationBadgeType } from '../../types';
+import { ProfilePhotoModal } from '../profile/ProfilePhotoModal';
 import { 
   User, 
   MapPin, 
@@ -14,7 +15,11 @@ import {
   Trash2, 
   LogOut, 
   Mail,
-  Sparkles
+  Sparkles,
+  Camera,
+  Phone,
+  Building2,
+  Home
 } from 'lucide-react';
 
 export const ProfileScreen: React.FC = () => {
@@ -32,11 +37,19 @@ export const ProfileScreen: React.FC = () => {
   const activeInstitution = profile?.institution || currentUser.institution;
   const activeBatch = profile?.batch || currentUser.batch;
   const activeTrust = profile?.trustScore || currentUser.trustScore;
+  const activeAvatar = profile?.avatar || user?.photoURL || currentUser.avatar;
+  const activePhone = profile?.phoneNumber || currentUser.phoneNumber;
+  const activeCountryCode = profile?.phoneCountryCode || currentUser.phoneCountryCode || '+91';
+  const activeEmployer = profile?.employer || currentUser.employer;
+  const activeApartment = profile?.apartmentCommunity || currentUser.apartmentCommunity;
 
   const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [showPhotoModal, setShowPhotoModal] = useState(false);
   const [editName, setEditName] = useState(currentUser.name);
   const [editBio, setEditBio] = useState(currentUser.bio);
   const [editLocation, setEditLocation] = useState(currentUser.location);
+  const [editEmployer, setEditEmployer] = useState(currentUser.employer || '');
+  const [editApartment, setEditApartment] = useState(currentUser.apartmentCommunity || '');
   const [editPrivacy, setEditPrivacy] = useState<'public' | 'circles_only' | 'connections_only'>(currentUser.privacySetting || 'public');
 
   // Add Experience modal state
@@ -54,6 +67,8 @@ export const ProfileScreen: React.FC = () => {
       name: editName,
       bio: editBio,
       location: editLocation,
+      employer: editEmployer,
+      apartmentCommunity: editApartment,
       privacySetting: editPrivacy
     });
     setIsEditingProfile(false);
@@ -84,12 +99,24 @@ export const ProfileScreen: React.FC = () => {
       <div className="p-6 bg-[#142238] border border-[#242831] rounded-xl space-y-4 shadow-xl">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-xl bg-[#1B1E24] border border-[#242831] flex items-center justify-center shrink-0 overflow-hidden">
-              <img
-                src={profile?.avatar || currentUser.avatar}
-                alt={activeName}
-                className="w-full h-full object-cover"
-              />
+            {/* Avatar with Camera Overlay Trigger */}
+            <div className="relative group shrink-0">
+              <div className="w-16 h-16 rounded-xl bg-[#1B1E24] border border-[#242831] overflow-hidden">
+                <img
+                  src={activeAvatar}
+                  alt={activeName}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowPhotoModal(true)}
+                className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 rounded-xl flex flex-col items-center justify-center text-white transition-opacity text-[10px] font-medium gap-0.5"
+                title="Change or take profile photo"
+              >
+                <Camera className="w-4 h-4" />
+                <span>Update</span>
+              </button>
             </div>
 
             <div>
@@ -108,13 +135,20 @@ export const ProfileScreen: React.FC = () => {
                   Trust Score {activeTrust}
                 </span>
 
+                {activePhone && (
+                  <span className="inline-flex items-center gap-1 text-[11px] font-mono px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
+                    <CheckCircle2 className="w-3 h-3" />
+                    Phone Verified ({activeCountryCode} ••••••{activePhone.slice(-4)})
+                  </span>
+                )}
+
                 {user && (
                   <span className={`inline-flex items-center gap-1 text-[11px] font-mono px-2 py-0.5 rounded border ${
                     user.emailVerified 
-                      ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' 
+                      ? 'bg-blue-500/10 text-blue-400 border-blue-500/30' 
                       : 'bg-amber-500/10 text-amber-300 border-amber-500/30'
                   }`}>
-                    {user.emailVerified ? '✓ Verified Alumni' : 'Unverified Email'}
+                    {user.emailVerified ? '✓ Verified Email' : 'Unverified Email'}
                   </span>
                 )}
               </div>
@@ -122,6 +156,14 @@ export const ProfileScreen: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-2 self-start sm:self-auto">
+            <button
+              onClick={() => setShowPhotoModal(true)}
+              className="px-3 py-1.5 rounded-lg border border-[#242831] text-xs font-medium bg-[#1B1E24] text-[#F5F6F8] hover:border-[#344B6B] transition-colors flex items-center gap-1.5"
+            >
+              <Camera className="w-3.5 h-3.5 text-[#344B6B]" />
+              <span>Photo</span>
+            </button>
+
             <button
               onClick={() => setIsEditingProfile(!isEditingProfile)}
               className="px-3 py-1.5 rounded-lg border border-[#242831] text-xs font-medium bg-[#1B1E24] text-[#F5F6F8] hover:border-[#344B6B] transition-colors flex items-center gap-1.5"
@@ -147,11 +189,30 @@ export const ProfileScreen: React.FC = () => {
           {currentUser.bio}
         </p>
 
+        {/* Community Affiliation Strip */}
         <div className="flex flex-wrap items-center gap-3 text-xs text-[#A7AFBC] pt-1 border-t border-[#242831]/60">
           <span className="flex items-center gap-1">
             <GraduationCap className="w-3.5 h-3.5 text-[#344B6B]" />
             <span className="text-[#F5F6F8]">{activeInstitution}</span> · {activeBatch}
           </span>
+          {activeEmployer && (
+            <>
+              <span>·</span>
+              <span className="flex items-center gap-1">
+                <Building2 className="w-3.5 h-3.5 text-[#344B6B]" />
+                <span className="text-[#F5F6F8]">{activeEmployer}</span>
+              </span>
+            </>
+          )}
+          {activeApartment && (
+            <>
+              <span>·</span>
+              <span className="flex items-center gap-1">
+                <Home className="w-3.5 h-3.5 text-[#344B6B]" />
+                <span className="text-[#F5F6F8]">{activeApartment}</span>
+              </span>
+            </>
+          )}
           <span>·</span>
           <span className="flex items-center gap-1">
             <MapPin className="w-3.5 h-3.5 text-[#344B6B]" />
@@ -343,6 +404,12 @@ export const ProfileScreen: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Profile Photo Upload & Camera Modal */}
+      <ProfilePhotoModal
+        isOpen={showPhotoModal}
+        onClose={() => setShowPhotoModal(false)}
+      />
     </div>
   );
 };

@@ -249,7 +249,7 @@ export const HomeScreen: React.FC = () => {
                   />
                   <div className="absolute top-2.5 left-2.5">
                     <span className="text-[10px] font-mono text-[#F5F6F8] uppercase tracking-wider bg-[#101827]/80 backdrop-blur-md border border-[#242831] px-2 py-0.5 rounded">
-                      {circle.categoryTag || circle.type}
+                      {circle.category === 'employer' ? 'Employer Circle' : circle.category === 'apartment_local' ? 'Apartment & Local' : (circle.categoryTag || 'Academic')}
                     </span>
                   </div>
                 </div>

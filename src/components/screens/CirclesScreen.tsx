@@ -55,8 +55,11 @@ export const CirclesScreen: React.FC = () => {
   const [showCreateCircleModal, setShowCreateCircleModal] = useState(false);
   const [newCircleName, setNewCircleName] = useState('');
   const [newCircleBatch, setNewCircleBatch] = useState('');
-  const [newCircleType, setNewCircleType] = useState<'school' | 'college' | 'company' | 'alumni'>('school');
+  const [newCircleCategory, setNewCircleCategory] = useState<'academic' | 'employer' | 'apartment_local'>('academic');
+  const [newCircleType, setNewCircleType] = useState<'school' | 'college' | 'company' | 'alumni' | 'fellowship'>('school');
   const [newCircleDesc, setNewCircleDesc] = useState('');
+  const [newCircleCompany, setNewCircleCompany] = useState('');
+  const [newCircleLocality, setNewCircleLocality] = useState('');
 
   // Find currently active circle
   const activeCircle = circles.find(c => c.id === activeCircleId) || circles[0];
@@ -95,12 +98,17 @@ export const CirclesScreen: React.FC = () => {
       name: newCircleName,
       batch: newCircleBatch || 'Class of 2024',
       type: newCircleType,
+      category: newCircleCategory,
+      companyName: newCircleCategory === 'employer' ? newCircleCompany : undefined,
+      locality: newCircleCategory === 'apartment_local' ? newCircleLocality : undefined,
       description: newCircleDesc
     });
     setShowCreateCircleModal(false);
     setNewCircleName('');
     setNewCircleBatch('');
     setNewCircleDesc('');
+    setNewCircleCompany('');
+    setNewCircleLocality('');
   };
 
   return (
@@ -143,18 +151,41 @@ export const CirclesScreen: React.FC = () => {
         {/* Top details and badges */}
         <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
           <div>
-            <div className="text-xs font-mono text-[#A7AFBC] uppercase tracking-wider">
-              {activeCircle.institutionName || activeCircle.name}
+            <div className="flex items-center gap-2 text-xs font-mono text-[#A7AFBC] uppercase tracking-wider">
+              <span>{activeCircle.companyName || activeCircle.institutionName || activeCircle.locality || activeCircle.name}</span>
+              <span>·</span>
+              <span className={`px-2 py-0.5 rounded text-[10px] ${
+                activeCircle.category === 'employer'
+                  ? 'bg-amber-500/10 text-amber-300 border border-amber-500/30'
+                  : activeCircle.category === 'apartment_local'
+                  ? 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/30'
+                  : 'bg-sky-500/10 text-sky-300 border border-sky-500/30'
+              }`}>
+                {activeCircle.category === 'employer' ? 'Employer Circle' : activeCircle.category === 'apartment_local' ? 'Apartment & Local' : 'Academic Circle'}
+              </span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-bold text-[#F5F6F8] font-display tracking-tight mt-0.5">
-              {activeCircle.batch || activeCircle.name}
+              {activeCircle.name}
             </h1>
+            <p className="text-xs text-[#A7AFBC] mt-1 max-w-2xl leading-relaxed">
+              {activeCircle.description}
+            </p>
+            {activeCircle.category === 'apartment_local' && activeCircle.communityRules && (
+              <div className="mt-2.5 p-2.5 rounded-lg bg-[#1B1E24] border border-[#242831] text-[11px] text-[#A7AFBC] space-y-1">
+                <span className="font-semibold text-[#F5F6F8] block">🛡️ Community Rules & Privacy Policy:</span>
+                <ul className="list-disc list-inside space-y-0.5 text-[10px]">
+                  {activeCircle.communityRules.map((rule, idx) => (
+                    <li key={idx}>{rule}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2 shrink-0">
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-md bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-mono">
               <CheckCircle2 className="w-3.5 h-3.5" />
-              Peer Confirmed
+              {activeCircle.verificationStatus === 'peer_confirmed' ? 'Peer Confirmed' : 'Verified'}
             </span>
 
             <span className="inline-flex items-center gap-1 px-3 py-1 rounded-md bg-[#1B1E24] border border-[#242831] text-[#A7AFBC] text-xs font-mono">
@@ -162,13 +193,15 @@ export const CirclesScreen: React.FC = () => {
               {activeCircle.membersCount || 128} members
             </span>
 
-            <button
-              onClick={() => openVerificationModal(activeCircle)}
-              className="px-3 py-1 bg-[#344B6B] hover:bg-[#3d587c] text-[#F5F6F8] text-xs font-medium rounded-md transition-colors flex items-center gap-1.5"
-            >
-              <ShieldCheck className="w-3.5 h-3.5" />
-              <span>Verify & Join</span>
-            </button>
+            {!activeCircle.isJoined && (
+              <button
+                onClick={() => openVerificationModal(activeCircle)}
+                className="px-3 py-1 bg-[#344B6B] hover:bg-[#3d587c] text-[#F5F6F8] text-xs font-medium rounded-md transition-colors flex items-center gap-1.5"
+              >
+                <ShieldCheck className="w-3.5 h-3.5" />
+                <span>Verify & Join</span>
+              </button>
+            )}
           </div>
         </div>
 
@@ -672,10 +705,35 @@ export const CirclesScreen: React.FC = () => {
 
             <form onSubmit={handleCreateCircleSubmit} className="mt-4 space-y-3">
               <div>
+                <label className="block text-xs font-medium text-[#A7AFBC] mb-1">Community Category</label>
+                <select
+                  value={newCircleCategory}
+                  onChange={(e) => {
+                    const cat = e.target.value as any;
+                    setNewCircleCategory(cat);
+                    if (cat === 'academic') setNewCircleType('school');
+                    else if (cat === 'employer') setNewCircleType('company');
+                    else setNewCircleType('fellowship');
+                  }}
+                  className="w-full px-3 py-2 text-xs rounded-lg bg-[#1B1E24] border border-[#242831] text-[#F5F6F8] focus:outline-none focus:border-[#344B6B]"
+                >
+                  <option value="academic">Academic Circle (School, College, Batch)</option>
+                  <option value="employer">Employer Circle (Company, Workplace Clan)</option>
+                  <option value="apartment_local">Apartment & Local Circle (Residential Society)</option>
+                </select>
+              </div>
+
+              <div>
                 <label className="block text-xs font-medium text-[#A7AFBC] mb-1">Circle Name</label>
                 <input
                   type="text"
-                  placeholder="e.g. Modern School Barakhamba — Batch 2018"
+                  placeholder={
+                    newCircleCategory === 'employer' 
+                      ? "e.g. Google India Engineering Alumni" 
+                      : newCircleCategory === 'apartment_local'
+                      ? "e.g. Pavilion Greens Residents Circle"
+                      : "e.g. Modern School Barakhamba — Batch 2018"
+                  }
                   value={newCircleName}
                   onChange={(e) => setNewCircleName(e.target.value)}
                   required
@@ -683,19 +741,50 @@ export const CirclesScreen: React.FC = () => {
                 />
               </div>
 
+              {newCircleCategory === 'employer' && (
+                <div>
+                  <label className="block text-xs font-medium text-[#A7AFBC] mb-1">Company / Organization Name</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Google, Razorpay, or McKinsey"
+                    value={newCircleCompany}
+                    onChange={(e) => setNewCircleCompany(e.target.value)}
+                    required
+                    className="w-full px-3 py-2 text-xs rounded-lg bg-[#1B1E24] border border-[#242831] text-[#F5F6F8] placeholder-[#A7AFBC]/50 focus:outline-none focus:border-[#344B6B]"
+                  />
+                </div>
+              )}
+
+              {newCircleCategory === 'apartment_local' && (
+                <div>
+                  <label className="block text-xs font-medium text-[#A7AFBC] mb-1">Locality / Area (Privacy-Safe)</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Sector 137, Expressway or Golf Course Road"
+                    value={newCircleLocality}
+                    onChange={(e) => setNewCircleLocality(e.target.value)}
+                    required
+                    className="w-full px-3 py-2 text-xs rounded-lg bg-[#1B1E24] border border-[#242831] text-[#F5F6F8] placeholder-[#A7AFBC]/50 focus:outline-none focus:border-[#344B6B]"
+                  />
+                  <p className="text-[10px] text-[#A7AFBC] mt-0.5">
+                    Privacy reminder: Do not enter individual flat or tower numbers.
+                  </p>
+                </div>
+              )}
+
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <label className="block text-xs font-medium text-[#A7AFBC] mb-1">Batch / Cohort</label>
                   <input
                     type="text"
-                    placeholder="e.g. Class of 2018"
+                    placeholder="e.g. Class of 2018 or Residents"
                     value={newCircleBatch}
                     onChange={(e) => setNewCircleBatch(e.target.value)}
                     className="w-full px-3 py-2 text-xs rounded-lg bg-[#1B1E24] border border-[#242831] text-[#F5F6F8] focus:outline-none focus:border-[#344B6B]"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-[#A7AFBC] mb-1">Category</label>
+                  <label className="block text-xs font-medium text-[#A7AFBC] mb-1">Type Tag</label>
                   <select
                     value={newCircleType}
                     onChange={(e) => setNewCircleType(e.target.value as any)}
@@ -705,6 +794,7 @@ export const CirclesScreen: React.FC = () => {
                     <option value="college">College</option>
                     <option value="university">University</option>
                     <option value="company">Company</option>
+                    <option value="fellowship">Community / Society</option>
                   </select>
                 </div>
               </div>

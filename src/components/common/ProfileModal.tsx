@@ -137,11 +137,38 @@ export const ProfileModal: React.FC = () => {
               <Calendar className="w-3.5 h-3.5 text-[#344B6B]" />
               <span>{profile.batch}</span>
             </div>
+            {profile.employer && (
+              <>
+                <span aria-hidden="true" className="text-[#242831]">·</span>
+                <div className="flex items-center gap-1 text-amber-300">
+                  <Building className="w-3.5 h-3.5" />
+                  <span>{profile.employer}</span>
+                </div>
+              </>
+            )}
+            {profile.apartmentCommunity && (
+              <>
+                <span aria-hidden="true" className="text-[#242831]">·</span>
+                <div className="flex items-center gap-1 text-emerald-400">
+                  <MapPin className="w-3.5 h-3.5" />
+                  <span>{profile.apartmentCommunity}</span>
+                </div>
+              </>
+            )}
             <span aria-hidden="true" className="text-[#242831]">·</span>
             <div className="flex items-center gap-1">
               <MapPin className="w-3.5 h-3.5 text-[#344B6B]" />
               <span>{profile.location}</span>
             </div>
+            {profile.phoneVerified && (
+              <>
+                <span aria-hidden="true" className="text-[#242831]">·</span>
+                <span className="inline-flex items-center gap-1 text-[10px] font-mono text-emerald-400 bg-emerald-500/10 px-1.5 py-0.2 rounded border border-emerald-500/20">
+                  <CheckCircle2 className="w-2.5 h-2.5" />
+                  Phone Verified
+                </span>
+              </>
+            )}
           </div>
 
           {/* Why Suggested & Mutual Connections */}
