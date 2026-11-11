@@ -23,7 +23,13 @@ export interface TimelineEntry {
   peerEndorsementsCount?: number;
 }
 
-export type CircleMajorCategory = 'academic' | 'employer' | 'apartment_local';
+export type CircleMajorCategory =
+  | 'academic'
+  | 'employer'
+  | 'apartment_local'
+  | 'location'
+  | 'interest'
+  | 'private';
 
 export interface CountryOption {
   code: string;
