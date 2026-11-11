@@ -201,7 +201,9 @@ export interface Circle {
   societyName?: string;
   communityRules?: string[];
   privacyNotice?: string;
-}
+  visibility?: 'public' | 'private';
+  interests?: string[];
+  }
 
 export interface CircleJoinRequest {
   id: string;
