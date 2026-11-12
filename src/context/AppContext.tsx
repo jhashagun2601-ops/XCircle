@@ -10,7 +10,11 @@ import {
   ChatThread, 
   NotificationItem, 
   TimelineEntry,
-  RequestStatus
+  RequestStatus,
+  AdminRole,
+  UserAccountStatus,
+  ReportedContent,
+  AdminAuditLog
 } from '../types';
 import { 
   CURRENT_USER, 
@@ -21,7 +25,9 @@ import {
   INITIAL_REUNION, 
   INITIAL_REQUESTS, 
   INITIAL_CHATS, 
-  INITIAL_NOTIFICATIONS 
+  INITIAL_NOTIFICATIONS,
+  INITIAL_REPORTED_CONTENT,
+  INITIAL_AUDIT_LOGS
 } from '../data/mockData';
 
 interface AppContextType {
@@ -35,11 +41,17 @@ interface AppContextType {
   activeCircleId: string;
   setActiveCircleId: (id: string) => void;
   createCircle: (circleData: Partial<Circle>) => void;
+  updateCircle: (circleId: string, data: Partial<Circle>) => void;
+  archiveCircle: (circleId: string) => void;
+  deleteCircle: (circleId: string) => void;
+  approveCircle: (circleId: string) => void;
+  rejectCircle: (circleId: string) => void;
   posts: CommunityPost[];
   addPost: (content: string, tag?: CommunityPost['tag'], image?: string) => void;
   likePost: (postId: string) => void;
   reactToPost: (postId: string, reaction: 'heart' | 'nostalgia' | 'highFive') => void;
   addComment: (postId: string, text: string) => void;
+  deletePost: (postId: string) => void;
   memories: MemoryItem[];
   addMemory: (title: string, year: string, image: string, caption: string, eventTag: string) => void;
   likeMemory: (memoryId: string) => void;
@@ -64,8 +76,37 @@ interface AppContextType {
   markAllNotificationsRead: () => void;
   addTimelineEntry: (entry: Omit<TimelineEntry, 'id'>) => void;
   deleteTimelineEntry: (id: string) => void;
+
+  // User Management & Roles
+  allUsers: UserProfile[];
+  updateUserRole: (userId: string, newRole: AdminRole) => void;
+  toggleUserSuspension: (userId: string) => void;
+  currentUserRole: AdminRole;
+  switchPreviewRole: (role: AdminRole) => void;
+
+  // Moderation & Reporting
+  reportedContent: ReportedContent[];
+  reportItem: (item: Omit<ReportedContent, 'id' | 'reportedAt' | 'status'>) => void;
+  resolveReport: (reportId: string, actionTaken: 'removed' | 'dismissed' | 'warned', notes?: string) => void;
+  removeReportedContent: (reportId: string) => void;
+
+  // Admin Audit Log
+  auditLogs: AdminAuditLog[];
+  addAuditLog: (action: string, targetType: AdminAuditLog['targetType'], targetId: string, targetName: string, details?: string, result?: AdminAuditLog['result']) => void;
+
+  // Privacy & Access Helpers
+  canAccessCircleContent: (circle: Circle) => boolean;
+  isCircleAdmin: (circleId: string) => boolean;
   
   // Modals & Overlays
+  isCreateMenuOpen: boolean;
+  openCreateMenu: () => void;
+  closeCreateMenu: () => void;
+  isCreateCircleModalOpen: boolean;
+  openCreateCircleModal: () => void;
+  closeCreateCircleModal: () => void;
+  activeCircleTab: 'feed' | 'members' | 'memories' | 'reunion' | 'info' | 'announcements' | 'requests' | 'settings';
+  setActiveCircleTab: (tab: 'feed' | 'members' | 'memories' | 'reunion' | 'info' | 'announcements' | 'requests' | 'settings') => void;
   activeProfileModal: UserProfile | null;
   openProfileModal: (profile: UserProfile) => void;
   closeProfileModal: () => void;
@@ -102,8 +143,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length >= 10 && parsed.every((c: any) => c.category)) {
-          return parsed;
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          const existingIds = new Set(parsed.map((c: any) => c.id));
+          const newDefaults = INITIAL_CIRCLES.filter(c => !existingIds.has(c.id));
+          return [...parsed, ...newDefaults];
         }
       } catch (e) {
         // ignore
@@ -146,9 +189,59 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return saved ? JSON.parse(saved) : INITIAL_NOTIFICATIONS;
   });
 
-  const [adminMode, setAdminMode] = useState<boolean>(false);
+  // Admin and Moderation State
+  const [allUsers, setAllUsers] = useState<UserProfile[]>(() => {
+    const saved = localStorage.getItem('xcircle_all_users');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      } catch (e) {}
+    }
+    return [CURRENT_USER, ...INITIAL_RADAR_PROFILES];
+  });
 
-  // Modals
+  const [reportedContent, setReportedContent] = useState<ReportedContent[]>(() => {
+    const saved = localStorage.getItem('xcircle_reports');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      } catch (e) {}
+    }
+    return INITIAL_REPORTED_CONTENT;
+  });
+
+  const [auditLogs, setAuditLogs] = useState<AdminAuditLog[]>(() => {
+    const saved = localStorage.getItem('xcircle_audit_logs');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      } catch (e) {}
+    }
+    return INITIAL_AUDIT_LOGS;
+  });
+
+  const [previewRole, setPreviewRole] = useState<AdminRole>(() => {
+    return currentUser.role || 'super_admin';
+  });
+
+  const currentUserRole: AdminRole = previewRole;
+
+  const [adminMode, setAdminMode] = useState<boolean>(true);
+
+  // Modals & Menu
+  const [isCreateMenuOpen, setIsCreateMenuOpen] = useState<boolean>(false);
+  const openCreateMenu = () => setIsCreateMenuOpen(true);
+  const closeCreateMenu = () => setIsCreateMenuOpen(false);
+
+  const [isCreateCircleModalOpen, setIsCreateCircleModalOpen] = useState<boolean>(false);
+  const openCreateCircleModal = () => setIsCreateCircleModalOpen(true);
+  const closeCreateCircleModal = () => setIsCreateCircleModalOpen(false);
+
+  const [activeCircleTab, setActiveCircleTab] = useState<'feed' | 'members' | 'memories' | 'reunion' | 'info' | 'announcements' | 'requests' | 'settings'>('feed');
+
   const [activeProfileModal, setActiveProfileModal] = useState<UserProfile | null>(null);
   const [verificationModalOpen, setVerificationModalOpen] = useState<boolean>(false);
   const [verificationTargetCircle, setVerificationTargetCircle] = useState<Circle | null>(null);
@@ -193,6 +286,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     localStorage.setItem('xcircle_notifications', JSON.stringify(notifications));
   }, [notifications]);
 
+  useEffect(() => {
+    localStorage.setItem('xcircle_all_users', JSON.stringify(allUsers));
+  }, [allUsers]);
+
+  useEffect(() => {
+    localStorage.setItem('xcircle_reports', JSON.stringify(reportedContent));
+  }, [reportedContent]);
+
+  useEffect(() => {
+    localStorage.setItem('xcircle_audit_logs', JSON.stringify(auditLogs));
+  }, [auditLogs]);
+
   const showToast = (msg: string) => {
     setToastMessage(msg);
     setTimeout(() => {
@@ -221,21 +326,69 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }));
   };
 
+  const addAuditLog = (
+    action: string, 
+    targetType: AdminAuditLog['targetType'], 
+    targetId: string, 
+    targetName: string, 
+    details?: string, 
+    result: AdminAuditLog['result'] = 'success'
+  ) => {
+    const newLog: AdminAuditLog = {
+      id: `log_${Date.now()}`,
+      adminId: currentUser.id,
+      adminName: `${currentUser.name} (${currentUserRole.replace('_', ' ').toUpperCase()})`,
+      adminRole: currentUserRole,
+      action,
+      targetType,
+      targetId,
+      targetName,
+      timestamp: 'Just now',
+      result,
+      details
+    };
+    setAuditLogs(prev => [newLog, ...prev]);
+  };
+
   const createCircle = (circleData: Partial<Circle>) => {
     const newCircle: Circle = {
       id: `circle_${Date.now()}`,
       name: circleData.name || 'New Community Circle',
-      batch: circleData.batch || 'Class of 2024',
+      batch: circleData.batch || (circleData.category === 'apartment_local' ? 'Residents Guild' : 'Class of 2026'),
       membersCount: 1,
-      type: circleData.type || 'school',
+      type: circleData.type || (circleData.category === 'employer' ? 'company' : circleData.category === 'academic' ? 'school' : 'fellowship'),
       category: circleData.category || 'academic',
+      subtype: circleData.subtype,
+      isPrivate: Boolean(circleData.isPrivate),
+      interests: circleData.interests || [],
+      guidelines: circleData.guidelines || [
+        'Respect all community members',
+        'No spam, commercial ads, or harassment',
+        'Verify facts before sharing sensitive info'
+      ],
       companyName: circleData.companyName,
+      companyInfo: circleData.companyInfo,
+      departmentOrCohort: circleData.departmentOrCohort,
+      workplaceDomain: circleData.workplaceDomain,
       locality: circleData.locality,
-      verificationStatus: 'peer_confirmed',
-      description: circleData.description || 'A gathering place for shared memories.',
+      city: circleData.city,
+      societyName: circleData.societyName,
+      communityRules: circleData.communityRules || (circleData.locality ? [
+        'Locality verification required',
+        'Privacy First: Never share exact flat/unit numbers',
+        'Respect neighbor quiet hours'
+      ] : undefined),
+      privacyNotice: circleData.isPrivate 
+        ? 'Private Circle: Content, discussions and member list are restricted to approved members only.' 
+        : (circleData.locality ? 'Privacy Shield: Exact apartment numbers are never displayed publicly.' : undefined),
+      verificationStatus: circleData.isPrivate ? 'document_reviewed' : 'peer_confirmed',
+      description: circleData.description || 'A gathering place for shared memories and connections.',
       coverImage: circleData.coverImage || '/src/assets/images/xcircle_community_campus_1793604164603.jpg',
       establishedYear: new Date().getFullYear().toString(),
       isJoined: true,
+      creatorId: currentUser.id,
+      creatorName: currentUser.name,
+      status: 'active',
       members: [
         {
           userId: currentUser.id,
@@ -251,7 +404,60 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     setCircles(prev => [newCircle, ...prev]);
     setActiveCircleId(newCircle.id);
-    showToast(`Circle "${newCircle.name}" created!`);
+    setCurrentScreen('circles');
+    addAuditLog(
+      'Created Circle', 
+      'circle', 
+      newCircle.id, 
+      newCircle.name, 
+      `Created ${newCircle.category} circle (${newCircle.isPrivate ? 'Private' : 'Public'})`, 
+      'success'
+    );
+    showToast(`Circle "${newCircle.name}" created! You are the circle administrator.`);
+  };
+
+  const updateCircle = (circleId: string, data: Partial<Circle>) => {
+    setCircles(prev => prev.map(c => c.id === circleId ? { ...c, ...data } : c));
+    const target = circles.find(c => c.id === circleId);
+    addAuditLog('Updated Circle Details', 'circle', circleId, target?.name || 'Circle', 'Modified circle settings', 'success');
+    showToast('Circle details updated');
+  };
+
+  const archiveCircle = (circleId: string) => {
+    setCircles(prev => prev.map(c => c.id === circleId ? { ...c, status: 'archived', archivedAt: new Date().toLocaleDateString() } : c));
+    const target = circles.find(c => c.id === circleId);
+    addAuditLog('Archived Circle', 'circle', circleId, target?.name || 'Circle', 'Archived community from public search', 'warning');
+    showToast('Circle archived');
+  };
+
+  const deleteCircle = (circleId: string) => {
+    const target = circles.find(c => c.id === circleId);
+    setCircles(prev => prev.filter(c => c.id !== circleId));
+    if (activeCircleId === circleId) {
+      const remaining = circles.filter(c => c.id !== circleId);
+      if (remaining.length > 0) setActiveCircleId(remaining[0].id);
+    }
+    addAuditLog('Deleted Circle', 'circle', circleId, target?.name || 'Circle', 'Permanently removed circle', 'warning');
+    showToast('Circle removed');
+  };
+
+  const approveCircle = (circleId: string) => {
+    setCircles(prev => prev.map(c => c.id === circleId ? { ...c, status: 'active', verificationStatus: 'peer_confirmed' } : c));
+    const target = circles.find(c => c.id === circleId);
+    addAuditLog('Approved Circle', 'circle', circleId, target?.name || 'Circle', 'Moderation review passed', 'success');
+    showToast('Circle approved & published');
+  };
+
+  const rejectCircle = (circleId: string) => {
+    setCircles(prev => prev.map(c => c.id === circleId ? { ...c, status: 'rejected' } : c));
+    const target = circles.find(c => c.id === circleId);
+    addAuditLog('Rejected Circle', 'circle', circleId, target?.name || 'Circle', 'Failed moderation verification guidelines', 'warning');
+    showToast('Circle rejected');
+  };
+
+  const deletePost = (postId: string) => {
+    setPosts(prev => prev.filter(p => p.id !== postId));
+    showToast('Post removed');
   };
 
   const addPost = (content: string, tag: CommunityPost['tag'] = 'General', image?: string) => {
@@ -573,6 +779,84 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setVerificationTargetCircle(null);
   };
 
+  const updateUserRole = (userId: string, newRole: AdminRole) => {
+    if (currentUserRole !== 'super_admin' && currentUserRole !== 'admin') {
+      showToast('Permission denied: Only Administrators can modify roles');
+      return;
+    }
+    setAllUsers(prev => prev.map(u => u.id === userId ? { ...u, role: newRole } : u));
+    if (currentUser.id === userId) {
+      setCurrentUser(prev => ({ ...prev, role: newRole }));
+      setPreviewRole(newRole);
+    }
+    const targetUser = allUsers.find(u => u.id === userId);
+    addAuditLog('Updated User Role', 'user', userId, targetUser?.name || 'User', `Assigned role ${newRole}`, 'success');
+    showToast(`Role updated to ${newRole.replace('_', ' ').toUpperCase()}`);
+  };
+
+  const toggleUserSuspension = (userId: string) => {
+    if (currentUserRole !== 'super_admin' && currentUserRole !== 'admin') {
+      showToast('Permission denied: Only Administrators can suspend accounts');
+      return;
+    }
+    const targetUser = allUsers.find(u => u.id === userId);
+    const willSuspend = targetUser?.status !== 'suspended';
+    const nextStatus: UserAccountStatus = willSuspend ? 'suspended' : 'active';
+    setAllUsers(prev => prev.map(u => u.id === userId ? { ...u, status: nextStatus } : u));
+    addAuditLog(willSuspend ? 'Suspended Account' : 'Reactivated Account', 'user', userId, targetUser?.name || 'User', `Status changed to ${nextStatus}`, 'warning');
+    showToast(`Account ${willSuspend ? 'SUSPENDED' : 'REACTIVATED'}`);
+  };
+
+  const switchPreviewRole = (role: AdminRole) => {
+    setPreviewRole(role);
+    showToast(`Role preview switched to: ${role.replace('_', ' ').toUpperCase()}`);
+    addAuditLog('Switched Role Preview', 'system', currentUser.id, currentUser.name, `Simulating interface as ${role}`, 'success');
+  };
+
+  const reportItem = (item: Omit<ReportedContent, 'id' | 'reportedAt' | 'status'>) => {
+    const newReport: ReportedContent = {
+      ...item,
+      id: `rep_${Date.now()}`,
+      reportedAt: 'Just now',
+      status: 'pending'
+    };
+    setReportedContent(prev => [newReport, ...prev]);
+    showToast('Report submitted to Community Moderation team.');
+  };
+
+  const resolveReport = (reportId: string, actionTaken: 'removed' | 'dismissed' | 'warned', notes?: string) => {
+    setReportedContent(prev => prev.map(r => r.id === reportId ? { ...r, status: actionTaken === 'dismissed' ? 'dismissed' : 'resolved', notes } : r));
+    const rep = reportedContent.find(r => r.id === reportId);
+    const targetType = rep?.type === 'circle' ? 'circle' : rep?.type === 'user' ? 'user' : rep?.type === 'comment' ? 'comment' : 'post';
+    addAuditLog(`Resolved Report (${actionTaken.toUpperCase()})`, targetType, rep?.targetId || 'item', rep?.targetTitle || 'Item', notes || `Action: ${actionTaken}`, 'success');
+    showToast(`Report marked as ${actionTaken.toUpperCase()}`);
+  };
+
+  const removeReportedContent = (reportId: string) => {
+    const rep = reportedContent.find(r => r.id === reportId);
+    if (!rep) return;
+    if (rep.type === 'post') {
+      deletePost(rep.targetId);
+    }
+    resolveReport(reportId, 'removed', 'Content removed by administrator');
+  };
+
+  const canAccessCircleContent = (circle: Circle): boolean => {
+    if (!circle.isPrivate) return true;
+    if (currentUserRole === 'super_admin' || currentUserRole === 'admin') return true;
+    if (circle.isJoined) return true;
+    if (circle.members?.some(m => m.userId === currentUser.id)) return true;
+    return false;
+  };
+
+  const isCircleAdmin = (circleId: string): boolean => {
+    if (currentUserRole === 'super_admin' || currentUserRole === 'admin') return true;
+    const circle = circles.find(c => c.id === circleId);
+    if (!circle) return false;
+    if (circle.creatorId === currentUser.id) return true;
+    return circle.members?.some(m => m.userId === currentUser.id && m.role === 'admin') || false;
+  };
+
   const unreadNotificationsCount = notifications.filter(n => !n.read).length;
 
   return (
@@ -588,11 +872,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         activeCircleId,
         setActiveCircleId,
         createCircle,
+        updateCircle,
+        archiveCircle,
+        deleteCircle,
+        approveCircle,
+        rejectCircle,
         posts,
         addPost,
         likePost,
         reactToPost,
         addComment,
+        deletePost,
         memories,
         addMemory,
         likeMemory,
@@ -617,6 +907,27 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         markAllNotificationsRead,
         addTimelineEntry,
         deleteTimelineEntry,
+        allUsers,
+        updateUserRole,
+        toggleUserSuspension,
+        currentUserRole,
+        switchPreviewRole,
+        reportedContent,
+        reportItem,
+        resolveReport,
+        removeReportedContent,
+        auditLogs,
+        addAuditLog,
+        canAccessCircleContent,
+        isCircleAdmin,
+        isCreateMenuOpen,
+        openCreateMenu,
+        closeCreateMenu,
+        isCreateCircleModalOpen,
+        openCreateCircleModal,
+        closeCreateCircleModal,
+        activeCircleTab,
+        setActiveCircleTab,
         activeProfileModal,
         openProfileModal,
         closeProfileModal,

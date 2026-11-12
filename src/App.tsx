@@ -7,6 +7,8 @@ import { GlobalSearchModal } from './components/common/GlobalSearchModal';
 import { NotificationsDrawer } from './components/common/NotificationsDrawer';
 import { ProfileModal } from './components/common/ProfileModal';
 import { VerificationModal } from './components/verification/VerificationModal';
+import { CreateActionMenu } from './components/common/CreateActionMenu';
+import { CreateCircleModal } from './components/circles/CreateCircleModal';
 import { EmailVerificationBanner } from './components/auth/EmailVerificationBanner';
 
 import { SignInScreen } from './components/auth/SignInScreen';
@@ -22,12 +24,13 @@ import { CirclesScreen } from './components/screens/CirclesScreen';
 import { RequestsScreen } from './components/screens/RequestsScreen';
 import { ChatScreen } from './components/screens/ChatScreen';
 import { ProfileScreen } from './components/screens/ProfileScreen';
+import { AdminScreen } from './components/screens/AdminScreen';
 
 import { CheckCircle2, Loader2 } from 'lucide-react';
 import { Logo } from './components/common/Logo';
 
 const AppContent: React.FC = () => {
-  const { currentScreen, toastMessage } = useApp();
+  const { currentScreen, toastMessage, isCreateCircleModalOpen, closeCreateCircleModal } = useApp();
   const { user, profile, loading } = useAuth();
 
   // Browser Pathname State
@@ -125,6 +128,8 @@ const AppContent: React.FC = () => {
         return <ChatScreen />;
       case 'profile':
         return <ProfileScreen />;
+      case 'admin':
+        return <AdminScreen />;
       default:
         return <HomeScreen />;
     }
@@ -166,11 +171,18 @@ const AppContent: React.FC = () => {
         </div>
       </footer>
 
+      {/* Create Action Menu (Triggered by Centre Navigation Button) */}
+      <CreateActionMenu />
+
       {/* Global Modals & Drawers */}
       <GlobalSearchModal />
       <NotificationsDrawer />
       <ProfileModal />
       <VerificationModal />
+      <CreateCircleModal
+        isOpen={isCreateCircleModalOpen}
+        onClose={closeCreateCircleModal}
+      />
 
       {/* Interactive Toast Notification */}
       {toastMessage && (

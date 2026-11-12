@@ -230,7 +230,47 @@ CREATE TABLE IF NOT EXISTS public.sso_organizations (
 );
 
 -- =========================================================================
--- 10. ROW LEVEL SECURITY (RLS) POLICIES
+-- 10. CONTENT MODERATION & REPORTS
+-- =========================================================================
+CREATE TABLE IF NOT EXISTS public.reported_content (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  type VARCHAR(32) NOT NULL, -- 'post', 'comment', 'member', 'memory'
+  target_id TEXT NOT NULL,
+  target_title TEXT NOT NULL,
+  target_author_name TEXT,
+  target_author_id TEXT,
+  circle_id TEXT NOT NULL,
+  circle_name TEXT NOT NULL,
+  reason TEXT NOT NULL,
+  reported_by TEXT NOT NULL,
+  reported_at TIMESTAMPTZ DEFAULT NOW(),
+  status VARCHAR(24) DEFAULT 'pending', -- 'pending', 'resolved', 'dismissed'
+  severity VARCHAR(16) DEFAULT 'medium', -- 'low', 'medium', 'high', 'critical'
+  action_taken TEXT,
+  resolved_at TIMESTAMPTZ,
+  resolved_by TEXT
+);
+
+-- =========================================================================
+-- 11. IMMUTABLE ADMIN AUDIT LOGS
+-- =========================================================================
+CREATE TABLE IF NOT EXISTS public.admin_audit_logs (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  timestamp TIMESTAMPTZ DEFAULT NOW(),
+  admin_id TEXT NOT NULL,
+  admin_name TEXT NOT NULL,
+  admin_role VARCHAR(32) NOT NULL,
+  action VARCHAR(64) NOT NULL,
+  target_type VARCHAR(32) NOT NULL,
+  target_id TEXT NOT NULL,
+  target_name TEXT NOT NULL,
+  details TEXT NOT NULL,
+  status VARCHAR(16) DEFAULT 'success',
+  ip_address TEXT DEFAULT '127.0.0.1'
+);
+
+-- =========================================================================
+-- 12. ROW LEVEL SECURITY (RLS) POLICIES
 -- =========================================================================
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.circles ENABLE ROW LEVEL SECURITY;
@@ -240,6 +280,8 @@ ALTER TABLE public.posts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.post_comments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.memories ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.reunion_events ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.reported_content ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.admin_audit_logs ENABLE ROW LEVEL SECURITY;
 
 -- Profiles: Anyone authenticated can read profiles; users can update own profile
 CREATE POLICY "Public profiles are viewable by everyone" ON public.profiles
@@ -251,16 +293,42 @@ CREATE POLICY "Users can insert their own profile" ON public.profiles
 CREATE POLICY "Users can update their own profile" ON public.profiles
   FOR UPDATE USING (auth.uid() = id);
 
--- Circles: Viewable by everyone; created by authenticated users
-CREATE POLICY "Circles are viewable by all users" ON public.circles
-  FOR SELECT USING (true);
+-- Circles: Public circles viewable by everyone; Private circles viewable by members or admins
+CREATE POLICY "Public circles are viewable by all users" ON public.circles
+  FOR SELECT USING (
+    is_private = false OR 
+    auth.uid() IN (SELECT user_id FROM public.circle_members WHERE circle_id = circles.id) OR
+    auth.uid() IN (SELECT id FROM public.profiles WHERE role IN ('super_admin', 'admin', 'moderator'))
+  );
 
 CREATE POLICY "Authenticated users can create circles" ON public.circles
   FOR INSERT WITH CHECK (auth.role() = 'authenticated');
 
--- Posts: Viewable by members of the circle or public circles
-CREATE POLICY "Posts are viewable by all authenticated users" ON public.posts
-  FOR SELECT USING (auth.role() = 'authenticated');
+-- Posts: Viewable only if circle is public OR user is a member of the private circle
+CREATE POLICY "Posts viewable with circle privacy enforcement" ON public.posts
+  FOR SELECT USING (
+    circle_id IN (
+      SELECT id FROM public.circles WHERE is_private = false
+      UNION
+      SELECT circle_id FROM public.circle_members WHERE user_id = auth.uid()
+    ) OR
+    auth.uid() IN (SELECT id FROM public.profiles WHERE role IN ('super_admin', 'admin', 'moderator'))
+  );
 
 CREATE POLICY "Circle members can create posts" ON public.posts
-  FOR INSERT WITH CHECK (auth.uid() = author_id);
+  FOR INSERT WITH CHECK (
+    auth.uid() = author_id AND
+    auth.uid() IN (SELECT user_id FROM public.circle_members WHERE circle_id = posts.circle_id)
+  );
+
+-- Moderation & Audit Logs: Staff only
+CREATE POLICY "Staff can view audit logs" ON public.admin_audit_logs
+  FOR SELECT USING (
+    auth.uid() IN (SELECT id FROM public.profiles WHERE role IN ('super_admin', 'admin', 'moderator'))
+  );
+
+CREATE POLICY "Staff can view reported content" ON public.reported_content
+  FOR SELECT USING (
+    auth.uid() IN (SELECT id FROM public.profiles WHERE role IN ('super_admin', 'admin', 'moderator'))
+  );
+

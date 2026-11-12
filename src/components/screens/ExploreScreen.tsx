@@ -19,7 +19,10 @@ import {
   Lock,
   Compass,
   FileCheck2,
-  ExternalLink
+  ExternalLink,
+  Heart,
+  MapPin,
+  Plus
 } from 'lucide-react';
 
 export const ExploreScreen: React.FC = () => {
@@ -28,46 +31,62 @@ export const ExploreScreen: React.FC = () => {
     setActiveCircleId, 
     setCurrentScreen, 
     openVerificationModal,
+    openCreateCircleModal,
     requests
   } = useApp();
 
-  // Major Category Tab: 'all' | 'academic' | 'employer' | 'apartment_local'
+  // Major Category Tab: 'all' | CircleMajorCategory
   const [selectedMajorCategory, setSelectedMajorCategory] = useState<'all' | CircleMajorCategory>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedVerification, setSelectedVerification] = useState<string>('all');
   const [selectedSize, setSelectedSize] = useState<string>('all');
   const [selectedMembershipFilter, setSelectedMembershipFilter] = useState<'all' | 'joined' | 'not_joined'>('all');
+  const [selectedVisibility, setSelectedVisibility] = useState<'all' | 'public' | 'private'>('all');
   const [showFilters, setShowFilters] = useState<boolean>(false);
 
-  // The 3 Major Categories + All
+  // Expanded Categories: All, Interest, Location, Academic, Employer, Local/Society
   const majorCategories = [
     {
       id: 'all' as const,
       label: 'All Communities',
       icon: Sparkles,
-      description: 'Discover across Academic, Employer, and Local residential networks',
-      badge: `${circles.length} Circles`,
+      description: 'Discover across all interest, location, academic, and professional circles',
+      badge: `${circles.length}`,
+    },
+    {
+      id: 'interest' as const,
+      label: 'Interest Circles',
+      icon: Heart,
+      description: 'Books, gaming, sports, tech, creative arts, and passion projects',
+      badge: `${circles.filter(c => c.category === 'interest').length}`,
+    },
+    {
+      id: 'location' as const,
+      label: 'Location Chapters',
+      icon: MapPin,
+      description: 'City chapters, neighborhood hubs, and regional alumni',
+      badge: `${circles.filter(c => c.category === 'location').length}`,
     },
     {
       id: 'academic' as const,
       label: 'Academic Circles',
       icon: GraduationCap,
       description: 'Schools, colleges, universities, batches, and degree departments',
-      badge: `${circles.filter(c => c.category === 'academic').length} Circles`,
+      badge: `${circles.filter(c => c.category === 'academic').length}`,
     },
     {
       id: 'employer' as const,
       label: 'Employer Circles',
       icon: Building2,
-      description: 'Workplace clans, companies, tech alumni, and departmental batches',
-      badge: `${circles.filter(c => c.category === 'employer').length} Circles`,
+      description: 'Workplaces, enterprise clans, tech alumni, and departments',
+      badge: `${circles.filter(c => c.category === 'employer').length}`,
     },
     {
       id: 'apartment_local' as const,
-      label: 'Apartment & Local Circles',
+      label: 'Society & Local',
       icon: Home,
-      description: 'Residential societies, neighborhoods & gated communities (privacy-first)',
-      badge: `${circles.filter(c => c.category === 'apartment_local').length} Circles`,
+      description: 'Residential societies, apartments, and gated neighborhood units',
+      badge: `${circles.filter(c => c.category === 'apartment_local').length}`,
     },
   ];
 
@@ -81,38 +100,43 @@ export const ExploreScreen: React.FC = () => {
         return false;
       }
 
-      // 2. Search Query Filter (Searches Name, Institution, Company, Locality, Batch, Description)
+      // 2. Visibility Filter
+      if (selectedVisibility === 'public' && c.isPrivate) return false;
+      if (selectedVisibility === 'private' && !c.isPrivate) return false;
+
+      // 3. Search Query Filter
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
         const matchesName = c.name.toLowerCase().includes(q);
         const matchesInst = c.institutionName?.toLowerCase().includes(q) || false;
         const matchesCompany = c.companyName?.toLowerCase().includes(q) || false;
         const matchesLocality = c.locality?.toLowerCase().includes(q) || false;
-        const matchesBatch = c.batch.toLowerCase().includes(q);
-        const matchesDesc = c.description.toLowerCase().includes(q);
+        const matchesBatch = c.batch?.toLowerCase().includes(q) || false;
+        const matchesDesc = c.description?.toLowerCase().includes(q) || false;
+        const matchesInterest = c.interests?.some(i => i.toLowerCase().includes(q)) || false;
 
-        if (!matchesName && !matchesInst && !matchesCompany && !matchesLocality && !matchesBatch && !matchesDesc) {
+        if (!matchesName && !matchesInst && !matchesCompany && !matchesLocality && !matchesBatch && !matchesDesc && !matchesInterest) {
           return false;
         }
       }
 
-      // 3. Verification Status Filter
+      // 4. Verification Status Filter
       if (selectedVerification !== 'all' && c.verificationStatus !== selectedVerification) {
         return false;
       }
 
-      // 4. Community Size Filter
+      // 5. Community Size Filter
       if (selectedSize === 'large' && c.membersCount < 200) return false;
       if (selectedSize === 'medium' && (c.membersCount < 50 || c.membersCount >= 200)) return false;
       if (selectedSize === 'small' && c.membersCount >= 50) return false;
 
-      // 5. Membership Filter
+      // 6. Membership Filter
       if (selectedMembershipFilter === 'joined' && !c.isJoined) return false;
       if (selectedMembershipFilter === 'not_joined' && c.isJoined) return false;
 
       return true;
     });
-  }, [circles, selectedMajorCategory, searchQuery, selectedVerification, selectedSize, selectedMembershipFilter]);
+  }, [circles, selectedMajorCategory, searchQuery, selectedVerification, selectedSize, selectedMembershipFilter, selectedVisibility]);
 
   const handleOpenCommunity = (circleId: string) => {
     setActiveCircleId(circleId);
@@ -196,6 +220,16 @@ export const ExploreScreen: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-2 self-start md:self-auto shrink-0">
+            {/* WhatsApp-Style Create Circle (+) Button */}
+            <button
+              onClick={openCreateCircleModal}
+              className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-[#25D366] hover:bg-[#20ba59] active:bg-[#1da850] text-white flex items-center gap-1.5 shadow-md shadow-emerald-950/40 border border-emerald-400/30 transition-all hover:scale-102 active:scale-98 cursor-pointer"
+              title="Create a New Circle (+)"
+            >
+              <Plus className="w-3.5 h-3.5 stroke-[2.75]" />
+              <span>+ Create Circle</span>
+            </button>
+
             <button
               onClick={() => setShowFilters(!showFilters)}
               className={`px-3 py-1.5 rounded-lg text-xs font-medium border flex items-center gap-1.5 transition-colors ${
@@ -250,10 +284,9 @@ export const ExploreScreen: React.FC = () => {
         </div>
 
         {/* =========================================================================
-            THREE MAJOR CATEGORIES BAR
-            Academic Circles + Employer Circles + Apartment & Local Circles
+            MAJOR CATEGORIES BAR: All, Interest, Location, Academic, Employer, Local
             ========================================================================= */}
-        <div className="mt-3 grid grid-cols-2 lg:grid-cols-4 gap-2.5">
+        <div className="mt-3 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
           {majorCategories.map((cat) => {
             const Icon = cat.icon;
             const isActive = selectedMajorCategory === cat.id;
@@ -261,27 +294,27 @@ export const ExploreScreen: React.FC = () => {
               <button
                 key={cat.id}
                 onClick={() => setSelectedMajorCategory(cat.id)}
-                className={`p-3 rounded-xl border text-left transition-all flex flex-col justify-between ${
+                className={`p-2.5 rounded-xl border text-left transition-all flex flex-col justify-between ${
                   isActive
                     ? 'bg-[#344B6B] border-[#4c6a94] text-[#F5F6F8] shadow-lg'
                     : 'bg-[#142238] border-[#242831] hover:border-[#344B6B] text-[#A7AFBC] hover:text-[#F5F6F8]'
                 }`}
               >
-                <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center justify-between gap-1">
                   <div className={`p-1.5 rounded-lg ${isActive ? 'bg-white/10 text-white' : 'bg-[#1B1E24] text-[#344B6B]'}`}>
-                    <Icon className="w-4 h-4" />
+                    <Icon className="w-3.5 h-3.5" />
                   </div>
-                  <span className={`text-[10px] font-mono px-2 py-0.5 rounded ${
+                  <span className={`text-[10px] font-mono px-1.5 py-0.2 rounded ${
                     isActive ? 'bg-white/15 text-white' : 'bg-[#1B1E24] text-[#A7AFBC] border border-[#242831]'
                   }`}>
                     {cat.badge}
                   </span>
                 </div>
                 <div className="mt-2">
-                  <h3 className={`text-xs font-bold font-display ${isActive ? 'text-white' : 'text-[#F5F6F8]'}`}>
+                  <h3 className={`text-xs font-bold font-display truncate ${isActive ? 'text-white' : 'text-[#F5F6F8]'}`}>
                     {cat.label}
                   </h3>
-                  <p className={`text-[11px] line-clamp-1 mt-0.5 ${isActive ? 'text-white/80' : 'text-[#A7AFBC]'}`}>
+                  <p className={`text-[10px] line-clamp-1 mt-0.5 ${isActive ? 'text-white/80' : 'text-[#A7AFBC]'}`}>
                     {cat.description}
                   </p>
                 </div>
@@ -293,6 +326,19 @@ export const ExploreScreen: React.FC = () => {
         {/* Collapsible Smart Filters */}
         {showFilters && (
           <div className="mt-3 p-3.5 bg-[#142238] rounded-lg border border-[#242831] flex flex-wrap items-center gap-4 text-xs">
+            <div className="flex items-center gap-2">
+              <span className="text-[#A7AFBC]">Access Policy:</span>
+              <select
+                value={selectedVisibility}
+                onChange={(e) => setSelectedVisibility(e.target.value as any)}
+                className="px-2.5 py-1 bg-[#1B1E24] border border-[#242831] rounded-md text-[#F5F6F8] text-xs focus:outline-none focus:border-[#344B6B]"
+              >
+                <option value="all">All Circles (Public & Private)</option>
+                <option value="public">Public Circles Only</option>
+                <option value="private">Private Circles Only</option>
+              </select>
+            </div>
+
             <div className="flex items-center gap-2">
               <span className="text-[#A7AFBC]">Verification:</span>
               <select

@@ -2,7 +2,10 @@
  * XCircle Type Definitions
  */
 
-export type ScreenId = 'home' | 'explore' | 'circles' | 'radar' | 'requests' | 'chat' | 'profile';
+export type ScreenId = 'home' | 'explore' | 'circles' | 'radar' | 'requests' | 'chat' | 'profile' | 'admin';
+
+export type AdminRole = 'super_admin' | 'admin' | 'moderator' | 'circle_admin' | 'member';
+export type UserAccountStatus = 'active' | 'suspended' | 'pending';
 
 export type VerificationBadgeType = 
   | 'peer_confirmed' 
@@ -23,13 +26,7 @@ export interface TimelineEntry {
   peerEndorsementsCount?: number;
 }
 
-export type CircleMajorCategory =
-  | 'academic'
-  | 'employer'
-  | 'apartment_local'
-  | 'location'
-  | 'interest'
-  | 'private';
+export type CircleMajorCategory = 'academic' | 'employer' | 'apartment_local' | 'interest' | 'location';
 
 export interface CountryOption {
   code: string;
@@ -78,6 +75,13 @@ export interface UserProfile {
   apartmentCommunity?: string;
   isProfileCompleted?: boolean;
   authProvider?: 'google' | 'magic_link' | 'sso' | 'password';
+  
+  // Administration & Moderation
+  role?: AdminRole;
+  status?: UserAccountStatus;
+  createdAt?: string;
+  lastActive?: string;
+  email?: string;
 }
 
 export interface CircleMember {
@@ -120,6 +124,10 @@ export interface CommunityPost {
   };
   userReaction?: 'heart' | 'nostalgia' | 'highFive' | null;
   comments: PostComment[];
+  reported?: boolean;
+  reportReason?: string;
+  reportedBy?: string;
+  isRemoved?: boolean;
 }
 
 export interface MemoryItem {
@@ -201,9 +209,19 @@ export interface Circle {
   societyName?: string;
   communityRules?: string[];
   privacyNotice?: string;
-  visibility?: 'public' | 'private';
-  interests?: string[];
-  }
+
+  // Visibility & Access Control
+  isPrivate?: boolean; // false = public, true = invitation/approval required
+  creatorId?: string;
+  creatorName?: string;
+  interests?: string[]; // e.g. ["Reading", "Sci-Fi", "Tech"]
+  subtype?: string; // e.g. "School", "University", "Gaming", "Apartment Society", "Workplace Cohort"
+  guidelines?: string[];
+  status?: 'active' | 'pending_review' | 'archived' | 'rejected';
+  reported?: boolean;
+  reportReason?: string;
+  archivedAt?: string;
+}
 
 export interface CircleJoinRequest {
   id: string;
@@ -213,6 +231,8 @@ export interface CircleJoinRequest {
   applicantId: string;
   applicantName: string;
   applicantAvatar: string;
+  applicantEmail?: string;
+  requestedAt?: string;
   submittedAt: string;
   status: RequestStatus;
   memoryAnswers: {
@@ -263,3 +283,35 @@ export interface NotificationItem {
     entityId?: string;
   };
 }
+
+export interface ReportedContent {
+  id: string;
+  type: 'post' | 'comment' | 'circle' | 'user';
+  targetId: string;
+  targetTitle: string;
+  targetAuthorName?: string;
+  targetAuthorId?: string;
+  circleId?: string;
+  circleName?: string;
+  reason: string;
+  reportedBy: string;
+  reportedAt: string;
+  status: 'pending' | 'resolved' | 'dismissed';
+  notes?: string;
+  severity: 'low' | 'medium' | 'high';
+}
+
+export interface AdminAuditLog {
+  id: string;
+  adminId: string;
+  adminName: string;
+  adminRole: AdminRole;
+  action: string;
+  targetType: 'user' | 'circle' | 'post' | 'comment' | 'request' | 'system';
+  targetId: string;
+  targetName: string;
+  timestamp: string;
+  result: 'success' | 'warning' | 'failed';
+  details?: string;
+}
+

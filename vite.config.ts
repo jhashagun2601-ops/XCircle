@@ -106,8 +106,12 @@ export default defineConfig(({mode}) => {
     envPrefix: ['VITE_', 'SUPABASE_'],
     resolve: {
       alias: {
-        '@': path.resolve(__dirname, '.'),
+        '@': path.resolve(process.cwd(), '.'),
       },
+    },
+    build: {
+      outDir: 'dist',
+      emptyOutDir: true,
     },
     server: {
       host: '0.0.0.0',

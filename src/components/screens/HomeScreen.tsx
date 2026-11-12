@@ -10,7 +10,8 @@ import {
   Radio, 
   Layers, 
   ChevronRight,
-  Compass
+  Compass,
+  Plus
 } from 'lucide-react';
 
 export const HomeScreen: React.FC = () => {
@@ -22,6 +23,7 @@ export const HomeScreen: React.FC = () => {
     setActiveCircleId, 
     openProfileModal, 
     setSearchModalOpen,
+    openCreateCircleModal,
     toggleConnect
   } = useApp();
 
@@ -223,13 +225,24 @@ export const HomeScreen: React.FC = () => {
             </p>
           </div>
 
-          <button
-            onClick={() => setCurrentScreen('explore')}
-            className="px-3 py-1.5 rounded-lg bg-[#142238] hover:bg-[#1B1E24] border border-[#242831] text-[#F5F6F8] text-xs font-medium transition-colors flex items-center gap-1.5"
-          >
-            <Compass className="w-3.5 h-3.5 text-[#344B6B]" />
-            <span>Explore All</span>
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={openCreateCircleModal}
+              className="px-3 py-1.5 rounded-lg bg-[#25D366] hover:bg-[#20ba59] active:bg-[#1da850] text-white text-xs font-semibold transition-all hover:scale-102 active:scale-98 flex items-center gap-1.5 shadow-md shadow-emerald-950/40 border border-emerald-400/30 cursor-pointer"
+              title="Create a New Circle (+)"
+            >
+              <Plus className="w-3.5 h-3.5 stroke-[2.75]" />
+              <span>+ Create Circle</span>
+            </button>
+
+            <button
+              onClick={() => setCurrentScreen('explore')}
+              className="px-3 py-1.5 rounded-lg bg-[#142238] hover:bg-[#1B1E24] border border-[#242831] text-[#F5F6F8] text-xs font-medium transition-colors flex items-center gap-1.5"
+            >
+              <Compass className="w-3.5 h-3.5 text-[#344B6B]" />
+              <span>Explore All</span>
+            </button>
+          </div>
         </div>
 
         {/* Visual Cards Grid */}

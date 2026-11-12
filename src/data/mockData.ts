@@ -6,7 +6,9 @@ import {
   ReunionEvent, 
   CircleJoinRequest, 
   ChatThread, 
-  NotificationItem 
+  NotificationItem,
+  ReportedContent,
+  AdminAuditLog
 } from '../types';
 
 export const CURRENT_USER: UserProfile = {
@@ -22,6 +24,11 @@ export const CURRENT_USER: UserProfile = {
   connectionsCount: 84,
   circlesCount: 6,
   privacySetting: 'public',
+  role: 'super_admin',
+  status: 'active',
+  email: 'jhashagun2601@gmail.com',
+  createdAt: '2023-01-15',
+  lastActive: 'Just now',
   timeline: [
     {
       id: 'tl_1',
@@ -636,6 +643,148 @@ export const INITIAL_CIRCLES: Circle[] = [
     cardHeight: 'tall',
     announcements: [],
     members: []
+  },
+
+  // =========================================================================
+  // 4. INTEREST-BASED CIRCLES (Books, Gaming, Tech, Sports, Arts, Hobbies)
+  // =========================================================================
+  {
+    id: 'circle_scifi_bookclub',
+    name: 'Speculative Fiction & Sci-Fi Book Circle',
+    category: 'interest',
+    type: 'fellowship',
+    categoryTag: 'Books & Reading',
+    subtype: 'Books & Reading',
+    interests: ['Books and Reading', 'Sci-Fi', 'World-Building', 'Creative Writing'],
+    batch: 'Readers Guild 2026',
+    membersCount: 88,
+    verificationStatus: 'self_declared',
+    isPrivate: false,
+    description: 'A thoughtful gathering of avid readers exploring speculative fiction, classic hard sci-fi, Afrofuturism, and utopian philosophy. Monthly book dissections and author discussions.',
+    coverImage: '/src/assets/images/xcircle_memory_school_1793604165373.jpg',
+    establishedYear: '2022',
+    isJoined: true,
+    reunionDue: false,
+    recentActivity: 'Reading selection for November: Ursula K. Le Guin’s "The Dispossessed"',
+    cardHeight: 'tall',
+    guidelines: [
+      'Spoilers must be tagged with [SPOILER] in all posts',
+      'Constructive literary debate welcomed; no ad-hominem arguments',
+      'Members vote on monthly book selections every 25th'
+    ],
+    announcements: [
+      {
+        id: 'ann_book_1',
+        title: 'November Virtual Book Discussion',
+        date: 'Nov 14, 2026',
+        content: 'Join via community audio room on Friday 8 PM IST for Chapters 1-6.'
+      }
+    ],
+    members: [
+      {
+        userId: 'usr_me',
+        name: 'Aastha',
+        avatar: '/src/assets/images/xcircle_profile_riya_1793604162630.jpg',
+        role: 'admin',
+        batch: 'Batch 2019',
+        verificationStatus: 'peer_confirmed',
+        joinedDate: 'Jan 2023'
+      }
+    ]
+  },
+  {
+    id: 'circle_indie_gaming',
+    name: 'Indie Game Developers & Esports Arena',
+    category: 'interest',
+    type: 'fellowship',
+    categoryTag: 'Gaming & Tech',
+    subtype: 'Gaming',
+    interests: ['Gaming', 'Technology', 'Pixel Art', 'Game Engines'],
+    batch: 'Developers & Streamers',
+    membersCount: 142,
+    verificationStatus: 'peer_confirmed',
+    isPrivate: false,
+    description: 'Game developers, pixel artists, sound designers, and tactical gamers. Playtesting member game prototypes, speedrunning classics, and organizing quarterly game jams.',
+    coverImage: '/src/assets/images/xcircle_community_campus_1793604164603.jpg',
+    establishedYear: '2023',
+    isJoined: false,
+    reunionDue: false,
+    recentActivity: 'Winter Game Jam theme voting is now live in the discussions',
+    cardHeight: 'medium',
+    guidelines: [
+      'Constructive gameplay feedback only',
+      'No unsolicited promotion of paid cheat tools or gambling',
+      'Credit original game asset artists when sharing work'
+    ],
+    announcements: [],
+    members: []
+  },
+  {
+    id: 'circle_founder_mentorship_private',
+    name: 'Stealth Founders & Angel Circle (Private)',
+    category: 'employer',
+    type: 'company',
+    categoryTag: 'Entrepreneurship',
+    subtype: 'Entrepreneurship',
+    companyName: 'Private Founders Syndicate',
+    interests: ['Entrepreneurship', 'Venture Capital', 'Product-Market Fit', 'Angel Investing'],
+    batch: 'Series A & Seed Founders',
+    membersCount: 36,
+    verificationStatus: 'document_reviewed',
+    isPrivate: true,
+    description: 'A strictly private and invite-only circle for active founders and angel investors. Confidential fundraising war-rooms, term sheet breakdowns, and peer co-founder counseling.',
+    coverImage: '/src/assets/images/xcircle_tech_alumni_colleagues_1793605572315.jpg',
+    establishedYear: '2024',
+    isJoined: false,
+    reunionDue: false,
+    recentActivity: 'Private AMA on non-dilutive grant funding this Thursday',
+    cardHeight: 'tall',
+    guidelines: [
+      'Strict Chatham House Rule: Nothing shared here leaves the circle',
+      'All prospective members require 2 existing sponsor endorsements',
+      'Zero pitching of commercial vendor services'
+    ],
+    announcements: [
+      {
+        id: 'ann_stealth_1',
+        title: 'Quarterly Pitch Deck Teardown',
+        date: 'Nov 8, 2026',
+        content: 'Confidential pitch review for early members preparing Q1 seed rounds.'
+      }
+    ],
+    members: []
+  },
+
+  // =========================================================================
+  // 5. LOCATION-BASED REGIONAL CHAPTERS
+  // =========================================================================
+  {
+    id: 'circle_south_delhi_heritage',
+    name: 'South Delhi Heritage & Morning Walkers',
+    category: 'location',
+    type: 'fellowship',
+    categoryTag: 'Neighbourhood',
+    subtype: 'Neighbourhood',
+    locality: 'Hauz Khas, Green Park & Mehrauli Heritage Belt',
+    city: 'New Delhi',
+    batch: 'Heritage Explorers',
+    membersCount: 110,
+    verificationStatus: 'self_declared',
+    isPrivate: false,
+    description: 'Weekend architectural walks, historical monument sketching, winter heritage photography, and coffee catchups across Mehrauli Archaeological Park and Lodhi Gardens.',
+    coverImage: '/src/assets/images/xcircle_campus_modern_school_1793605570820.jpg',
+    establishedYear: '2021',
+    isJoined: false,
+    reunionDue: false,
+    recentActivity: 'Lodhi Garden botanical walk photos uploaded to vault',
+    cardHeight: 'medium',
+    communityRules: [
+      'Keep monuments clean & preserve historical stone work',
+      'Respect morning walkers and bird watchers quiet hours',
+      'Open to all enthusiasts of Delhi history'
+    ],
+    announcements: [],
+    members: []
   }
 ];
 
@@ -1042,3 +1191,107 @@ export const CANTEEN_TRIVIA_QUESTIONS = [
     correctAnswer: 'Service Before Self'
   }
 ];
+
+export const INITIAL_REPORTED_CONTENT: ReportedContent[] = [
+  {
+    id: 'rep_1',
+    type: 'post',
+    targetId: 'post_sp_1',
+    targetTitle: 'Commercial crypto trading bot promo',
+    targetAuthorName: 'Anonymous Member',
+    targetAuthorId: 'usr_anon_1',
+    circleId: 'circle_indie_gaming',
+    circleName: 'Indie Game Developers & Esports Arena',
+    reason: 'Unsolicited spam and commercial cryptocurrency bot link in community discussions',
+    reportedBy: 'Kunal Singhania',
+    reportedAt: '1 hour ago',
+    status: 'pending',
+    severity: 'medium'
+  },
+  {
+    id: 'rep_2',
+    type: 'circle',
+    targetId: 'circle_spam_batch',
+    targetTitle: 'Fake 2017 Coaching Test Circle',
+    targetAuthorName: 'Suspicious Account',
+    targetAuthorId: 'usr_bad_actor',
+    circleName: 'Fake 2017 Coaching Test Circle',
+    reason: 'Duplicate commercial coaching circle created with misleading alumni verification claims',
+    reportedBy: 'Riya Sharma',
+    reportedAt: '3 hours ago',
+    status: 'pending',
+    severity: 'high'
+  },
+  {
+    id: 'rep_3',
+    type: 'comment',
+    targetId: 'comm_rep_3',
+    targetTitle: 'Aggressive debate comment on batch reunion budget',
+    targetAuthorName: 'Nikhil R.',
+    targetAuthorId: 'usr_nikhil',
+    circleId: 'circle_dps_2019',
+    circleName: 'DPS Noida — Batch 2019',
+    reason: 'Unconstructive hostile language violating batch reunion discussion guidelines',
+    reportedBy: 'Aman Gupta',
+    reportedAt: '1 day ago',
+    status: 'resolved',
+    notes: 'Warned user regarding civil discourse guidelines. Comment edited by author.',
+    severity: 'low'
+  }
+];
+
+export const INITIAL_AUDIT_LOGS: AdminAuditLog[] = [
+  {
+    id: 'log_1',
+    adminId: 'usr_me',
+    adminName: 'Aastha (Super Admin)',
+    adminRole: 'super_admin',
+    action: 'Approved Circle Join Request',
+    targetType: 'request',
+    targetId: 'req_1',
+    targetName: 'Tanvi Roy (DPS Noida 2019)',
+    timestamp: '2 hours ago',
+    result: 'success',
+    details: 'Verified memory quiz and high-school yearbook photo'
+  },
+  {
+    id: 'log_2',
+    adminId: 'usr_me',
+    adminName: 'Aastha (Super Admin)',
+    adminRole: 'super_admin',
+    action: 'Created Circle Category',
+    targetType: 'circle',
+    targetId: 'circle_scifi_bookclub',
+    targetName: 'Speculative Fiction & Sci-Fi Book Circle',
+    timestamp: 'Yesterday',
+    result: 'success',
+    details: 'Published new Interest-Based circle with community guidelines'
+  },
+  {
+    id: 'log_3',
+    adminId: 'usr_me',
+    adminName: 'Aastha (Super Admin)',
+    adminRole: 'super_admin',
+    action: 'Assigned Moderator Role',
+    targetType: 'user',
+    targetId: 'usr_riya',
+    targetName: 'Riya Sharma',
+    timestamp: '3 days ago',
+    result: 'success',
+    details: 'Promoted to Community Moderator for verified arts & media circles'
+  },
+  {
+    id: 'log_4',
+    adminId: 'usr_me',
+    adminName: 'Aastha (Super Admin)',
+    adminRole: 'super_admin',
+    action: 'Content Moderation Warning',
+    targetType: 'post',
+    targetId: 'post_warn_1',
+    targetName: 'Hostile debate comment',
+    timestamp: '4 days ago',
+    result: 'warning',
+    details: 'Issued official community civility guideline notice'
+  }
+];
+

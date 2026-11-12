@@ -7,6 +7,7 @@ import { Search, Bell, ShieldCheck, LogOut, Sparkles } from 'lucide-react';
 export const Header: React.FC = () => {
   const { 
     currentUser, 
+    currentScreen,
     setCurrentScreen, 
     unreadNotificationsCount, 
     setNotificationsDrawerOpen,
@@ -60,18 +61,18 @@ export const Header: React.FC = () => {
 
         {/* Zone 3: Actions & Profile & Real Logout */}
         <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-          {/* Admin Demo Mode toggle */}
+          {/* Admin Dashboard Navigation */}
           <button
-            onClick={toggleAdminMode}
-            className={`hidden md:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
-              adminMode 
-                ? 'bg-[#344B6B] text-[#F5F6F8] border-[#344B6B]' 
+            onClick={() => setCurrentScreen('admin')}
+            className={`hidden md:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition-colors ${
+              currentScreen === 'admin' 
+                ? 'bg-[#344B6B] text-[#F5F6F8] border-[#344B6B] shadow-sm' 
                 : 'text-[#A7AFBC] bg-[#142238] border-[#242831] hover:bg-[#1B1E24] hover:text-[#F5F6F8]'
             }`}
-            title="Toggle Community Admin review mode"
+            title="Open Platform Administration Panel"
           >
-            <ShieldCheck className="w-3.5 h-3.5" />
-            <span>Admin Review {adminMode ? 'ON' : 'OFF'}</span>
+            <ShieldCheck className="w-3.5 h-3.5 text-[#344B6B]" />
+            <span>Admin Panel</span>
           </button>
 
           {/* Notifications Bell */}
