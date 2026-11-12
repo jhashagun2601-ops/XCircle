@@ -2,7 +2,8 @@ import React from 'react';
 import { useApp } from '../../context/AppContext';
 import { useAuth } from '../../context/AuthContext';
 import { Logo } from './Logo';
-import { Search, Bell, ShieldCheck, LogOut, Sparkles } from 'lucide-react';
+import { Search, Bell, ShieldCheck, LogOut, Sparkles, Download } from 'lucide-react';
+import { usePWA } from '../../hooks/usePWA';
 
 export const Header: React.FC = () => {
   const { 
@@ -12,10 +13,12 @@ export const Header: React.FC = () => {
     unreadNotificationsCount, 
     setNotificationsDrawerOpen,
     setSearchModalOpen,
+    openPWAInstallModal,
     adminMode,
     toggleAdminMode
   } = useApp();
 
+  const { isInstalled } = usePWA();
   const { user, profile, logout, isDevPreview } = useAuth();
 
   const activeDisplayName = profile?.displayName || user?.displayName || currentUser.name;
@@ -61,6 +64,18 @@ export const Header: React.FC = () => {
 
         {/* Zone 3: Actions & Profile & Real Logout */}
         <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+          {/* PWA Install Button */}
+          {!isInstalled && (
+            <button
+              onClick={openPWAInstallModal}
+              className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 hover:bg-emerald-500/20 transition-colors shadow-sm"
+              title="Install XCircle App on your phone or desktop"
+            >
+              <Download className="w-3.5 h-3.5" />
+              <span className="hidden lg:inline">Install App</span>
+            </button>
+          )}
+
           {/* Admin Dashboard Navigation */}
           <button
             onClick={() => setCurrentScreen('admin')}

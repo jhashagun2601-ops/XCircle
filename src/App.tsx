@@ -10,6 +10,9 @@ import { VerificationModal } from './components/verification/VerificationModal';
 import { CreateActionMenu } from './components/common/CreateActionMenu';
 import { CreateCircleModal } from './components/circles/CreateCircleModal';
 import { EmailVerificationBanner } from './components/auth/EmailVerificationBanner';
+import { OfflineIndicator } from './components/pwa/OfflineIndicator';
+import { PWAUpdateToast } from './components/pwa/PWAUpdateToast';
+import { PWAInstallModal } from './components/pwa/PWAInstallModal';
 
 import { SignInScreen } from './components/auth/SignInScreen';
 import { SignUpScreen } from './components/auth/SignUpScreen';
@@ -30,7 +33,14 @@ import { CheckCircle2, Loader2 } from 'lucide-react';
 import { Logo } from './components/common/Logo';
 
 const AppContent: React.FC = () => {
-  const { currentScreen, toastMessage, isCreateCircleModalOpen, closeCreateCircleModal } = useApp();
+  const { 
+    currentScreen, 
+    toastMessage, 
+    isCreateCircleModalOpen, 
+    closeCreateCircleModal,
+    isPWAInstallModalOpen,
+    closePWAInstallModal
+  } = useApp();
   const { user, profile, loading } = useAuth();
 
   // Browser Pathname State
@@ -174,6 +184,10 @@ const AppContent: React.FC = () => {
       {/* Create Action Menu (Triggered by Centre Navigation Button) */}
       <CreateActionMenu />
 
+      {/* PWA Offline Banner & Update Toast */}
+      <OfflineIndicator />
+      <PWAUpdateToast />
+
       {/* Global Modals & Drawers */}
       <GlobalSearchModal />
       <NotificationsDrawer />
@@ -182,6 +196,10 @@ const AppContent: React.FC = () => {
       <CreateCircleModal
         isOpen={isCreateCircleModalOpen}
         onClose={closeCreateCircleModal}
+      />
+      <PWAInstallModal
+        isOpen={isPWAInstallModalOpen}
+        onClose={closePWAInstallModal}
       />
 
       {/* Interactive Toast Notification */}

@@ -19,8 +19,11 @@ import {
   Camera,
   Phone,
   Building2,
-  Home
+  Home,
+  Smartphone,
+  Download
 } from 'lucide-react';
+import { usePWA } from '../../hooks/usePWA';
 
 export const ProfileScreen: React.FC = () => {
   const { 
@@ -28,9 +31,11 @@ export const ProfileScreen: React.FC = () => {
     updateCurrentUser, 
     addTimelineEntry, 
     deleteTimelineEntry, 
-    setCurrentScreen 
+    setCurrentScreen,
+    openPWAInstallModal
   } = useApp();
 
+  const { isInstalled, isInstallable, promptInstall, hasPrompt } = usePWA();
   const { user, profile, logout, isDevPreview } = useAuth();
 
   const activeName = profile?.displayName || user?.displayName || currentUser.name;
@@ -334,6 +339,80 @@ export const ProfileScreen: React.FC = () => {
               </div>
             </div>
           ))}
+        </div>
+      </div>
+
+      {/* PWA & Mobile Installation Card */}
+      <div className="p-5 bg-[#142238] border border-[#242831] rounded-xl space-y-4 shadow-xl">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="w-11 h-11 rounded-xl bg-[#101827] border border-[#344B6B]/40 p-1.5 flex items-center justify-center shrink-0 shadow-md">
+              <img src="/pwa-192x192.png" alt="XCircle" className="w-full h-full object-contain rounded-lg" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="text-sm sm:text-base font-semibold text-[#F5F6F8] font-display">
+                  XCircle Mobile Application
+                </h3>
+                {isInstalled ? (
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-mono bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 font-semibold flex items-center gap-1">
+                    <CheckCircle2 className="w-2.5 h-2.5" />
+                    INSTALLED
+                  </span>
+                ) : (
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-mono bg-blue-500/15 border border-blue-500/30 text-blue-400 font-semibold">
+                    PWA READY
+                  </span>
+                )}
+              </div>
+              <p className="text-xs text-[#A7AFBC] mt-0.5">
+                {isInstalled 
+                  ? 'Running in standalone native mode with safe offline cache enabled.'
+                  : 'Install XCircle directly on your Android phone or iPhone for an app-like experience.'}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0">
+            {isInstalled ? (
+              <button
+                onClick={openPWAInstallModal}
+                className="w-full sm:w-auto px-3.5 py-2 rounded-lg bg-[#1B1E24] hover:bg-[#242831] border border-[#242831] text-[#A7AFBC] hover:text-[#F5F6F8] text-xs font-medium transition-colors flex items-center justify-center gap-2"
+              >
+                <Smartphone className="w-3.5 h-3.5 text-emerald-400" />
+                <span>App Info & Guide</span>
+              </button>
+            ) : (
+              <button
+                onClick={async () => {
+                  if (hasPrompt) {
+                    await promptInstall();
+                  } else {
+                    openPWAInstallModal();
+                  }
+                }}
+                className="w-full sm:w-auto px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-medium transition-all shadow-md flex items-center justify-center gap-2 active:scale-95 cursor-pointer"
+              >
+                <Download className="w-3.5 h-3.5" />
+                <span>Install XCircle App</span>
+              </button>
+            )}
+          </div>
+        </div>
+
+        <div className="pt-3 border-t border-[#242831]/60 grid grid-cols-2 sm:grid-cols-3 gap-3 text-[11px] text-[#A7AFBC]">
+          <div>
+            <span className="text-[#F5F6F8] font-medium block">Add to Home Screen</span>
+            <span>Fast Android & iOS launcher</span>
+          </div>
+          <div>
+            <span className="text-[#F5F6F8] font-medium block">Offline Shell</span>
+            <span>Non-sensitive assets cached</span>
+          </div>
+          <div className="col-span-2 sm:col-span-1">
+            <span className="text-[#F5F6F8] font-medium block">Full Privacy</span>
+            <span>Strict zero-leak cache policy</span>
+          </div>
         </div>
       </div>
 

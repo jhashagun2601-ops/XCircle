@@ -118,6 +118,9 @@ interface AppContextType {
   setSearchModalOpen: (open: boolean) => void;
   notificationsDrawerOpen: boolean;
   setNotificationsDrawerOpen: (open: boolean) => void;
+  isPWAInstallModalOpen: boolean;
+  openPWAInstallModal: () => void;
+  closePWAInstallModal: () => void;
   toastMessage: string | null;
   showToast: (msg: string) => void;
 }
@@ -247,6 +250,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [verificationTargetCircle, setVerificationTargetCircle] = useState<Circle | null>(null);
   const [searchModalOpen, setSearchModalOpen] = useState<boolean>(false);
   const [notificationsDrawerOpen, setNotificationsDrawerOpen] = useState<boolean>(false);
+  const [isPWAInstallModalOpen, setIsPWAInstallModalOpen] = useState<boolean>(false);
+  const openPWAInstallModal = () => setIsPWAInstallModalOpen(true);
+  const closePWAInstallModal = () => setIsPWAInstallModalOpen(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   // Sync to local storage
@@ -939,6 +945,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setSearchModalOpen,
         notificationsDrawerOpen,
         setNotificationsDrawerOpen,
+        isPWAInstallModalOpen,
+        openPWAInstallModal,
+        closePWAInstallModal,
         toastMessage,
         showToast
       }}
